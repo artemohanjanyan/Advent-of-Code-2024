@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include <algorithm>
-
 using namespace std;
 
 bool check(vector<int> const &report)
