@@ -1,1 +1,1 @@
-`clang++ -std=c++17 -Wall -Wextra main.cpp` is used for compilation.
+`clang++ -std=c++20 -Wall -Wextra main.cpp` is used for compilation.
