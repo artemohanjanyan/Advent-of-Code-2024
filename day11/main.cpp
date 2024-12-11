@@ -1,5 +1,5 @@
 #include <iostream>
-#include <vector>
+#include <map>
 
 using namespace std;
 
@@ -28,34 +28,49 @@ pair<uint64_t, uint64_t> split_digit(uint64_t n, int number_of_digits)
   return {n, a};
 }
 
+void step(map<uint64_t, uint64_t> &numbers)
+{
+  map<uint64_t, uint64_t> new_numbers;
+  for (auto const &[n, n_count] : numbers)
+    if (n == 0)
+      new_numbers[1] += n_count;
+    else
+    {
+      int number_of_digits = get_number_of_digits(n);
+      if (number_of_digits % 2 == 0)
+      {
+        pair<uint64_t, uint64_t> after_split = split_digit(n, number_of_digits);
+        new_numbers[after_split.first] += n_count;
+        new_numbers[after_split.second] += n_count;
+      }
+      else
+        new_numbers[n * 2024] += n_count;
+    }
+  numbers.swap(new_numbers);
+}
+
+uint64_t get_ans(map<uint64_t, uint64_t> &numbers)
+{
+  uint64_t ans = 0;
+  for (auto const &[n, n_count] : numbers)
+    ans += n_count;
+  return ans;
+}
+
 int main()
 {
-  vector<uint64_t> numbers;
+  map<uint64_t, uint64_t> numbers;
   uint64_t x;
   while (cin >> x)
-    numbers.push_back(x);
+    ++numbers[x];
 
   for (int i = 0; i < 25; ++i)
-  {
-    vector<uint64_t> new_numbers;
-    for (uint64_t n : numbers)
-      if (n == 0)
-        new_numbers.push_back(1);
-      else
-      {
-        int number_of_digits = get_number_of_digits(n);
-        if (number_of_digits % 2 == 0)
-        {
-          pair<uint64_t, uint64_t> after_split = split_digit(n, number_of_digits);
-          new_numbers.push_back(after_split.first);
-          new_numbers.push_back(after_split.second);
-        }
-        else
-          new_numbers.push_back(n * 2024);
-      }
-    numbers.swap(new_numbers);
-  }
-  cout << numbers.size() << endl;
+    step(numbers);
+  cout << get_ans(numbers) << endl;
+
+  for (int i = 0; i < 50; ++i)
+    step(numbers);
+  cout << get_ans(numbers) << endl;
 
   return 0;
 }
