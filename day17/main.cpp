@@ -78,18 +78,35 @@ struct program
     return ip < instructions.size();
   }
 
+  /*
+   * Figured out by reading the input that A should be 3*number of instructions
+   * bits long, and also on each iteration output depends on last 3 bits and
+   * also some bits to the left, and that iteration removes 3 least significant
+   * bits from A. It means that we need to find answer starting with 3 most
+   * significant bits that determine what will be the last number printed by the
+   * program.
+   *
+   * go_2 does that recursively, each iteration finds bits
+   * i*3, i*3 + 1 and i*3 + 2 if we count from the most significant one.
+   */
   uint64_t go_2(int i = 0, uint64_t ans = 0)
   {
     if (i == ssize(instructions))
       return ans;
-    for (uint64_t j = 0; j < 8; ++j)
+    for (uint64_t j = 0; j < 8; ++j) // all posible 3-bit combinations at
+                                     // position i
     {
-      program p1 = *this;
-      p1.a = (ans << 3) | j;
-      while (p1.go());
+      program p1 = *this; // make a copy of a program from the input
+      p1.a = (ans << 3) | j; // replace a
+      while (p1.go()); // run until it stops
+      // if first output is same as i-th instruction, we can use it
+      // we try all such options since the first one may not work further down
+      // the road
       if (p1.output[0] == this->instructions[ssize(this->instructions) - i - 1])
       {
+        // append 3 bits from j to ans and search further recursively
         uint64_t new_ans = go_2(i + 1, (ans << 3) | j);
+        // assume that 0 is not our answer
         if (new_ans != 0)
           return new_ans;
       }
