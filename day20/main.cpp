@@ -58,49 +58,74 @@ int main()
     return p.x >= 0 && p.y >= 0 && p.x < ssize(maze[0]) && p.y < ssize(maze);
   };
 
-  auto bfs = [&]()
+  distance.clear();
+  distance[start] = 0;
+  queue<point> q;
+  q.push(start);
+  while (!q.empty() && !distance.contains(finish))
   {
-    distance.clear();
-    distance[start] = 0;
-    queue<point> q;
-    q.push(start);
-    while (!q.empty() && !distance.contains(finish))
+    point current = q.front();
+    int current_distance = distance[current];
+    q.pop();
+    for (int i = 0; i < 4; ++i)
     {
-      point current = q.front();
-      int current_distance = distance[current];
-      q.pop();
-      for (int i = 0; i < 4; ++i)
-      {
-        point next_point = current + dp[i];
-        if (!is_in_bounds(next_point) ||
-            maze[next_point.y][next_point.x] == '#' ||
-            distance.contains(next_point))
-          continue;
-        distance[next_point] = current_distance + 1;
-        q.push(next_point);
-      }
+      point next_point = current + dp[i];
+      if (!is_in_bounds(next_point) ||
+          maze[next_point.y][next_point.x] == '#' ||
+          distance.contains(next_point))
+        continue;
+      distance[next_point] = current_distance + 1;
+      q.push(next_point);
     }
-  };
-
-  bfs();
-  int fair_distance = distance[finish];
+  }
 
   map<int, int> cheats;
   for (int y = 0; y < ssize(maze); ++y)
     for (int x = 0; x < ssize(maze[0]); ++x)
-      if (maze[y][x] == '#')
-      {
-        maze[y][x] = '.';
-        bfs();
-        if (distance[finish] < fair_distance)
-          ++cheats[fair_distance - distance[finish]];
-        maze[y][x] = '#';
-      }
+      if (maze[y][x] != '#')
+        for (int dy = -2; dy <= 2; ++dy)
+          for (int dx = -2; dx <= 2; ++dx)
+            if ((dx != 0 || dy != 0) && abs(dx) + abs(dy) <= 2)
+            {
+              point cheat_end_point = point{x, y} + point{dx, dy};
+              if (is_in_bounds(cheat_end_point) &&
+                  maze[cheat_end_point.y][cheat_end_point.x] != '#')
+              {
+                int cheat_saving = distance[cheat_end_point]
+                  - distance[point{x, y}] - abs(dx) - abs(dy);
+                if (cheat_saving > 0)
+                  ++cheats[cheat_saving];
+              }
+            }
 
   //for (auto const &p : cheats)
   //  cout << p.first << " " << p.second << endl;
 
   int ans = 0;
+  for (auto const &p : cheats)
+    if (p.first >= 100)
+      ans += p.second;
+  cout << ans << endl;
+
+  cheats.clear();
+  for (int y = 0; y < ssize(maze); ++y)
+    for (int x = 0; x < ssize(maze[0]); ++x)
+      if (maze[y][x] != '#')
+        for (int dy = -20; dy <= 20; ++dy)
+          for (int dx = -20; dx <= 20; ++dx)
+            if ((dx != 0 || dy != 0) && abs(dx) + abs(dy) <= 20)
+            {
+              point cheat_end_point = point{x, y} + point{dx, dy};
+              if (is_in_bounds(cheat_end_point) &&
+                  maze[cheat_end_point.y][cheat_end_point.x] != '#')
+              {
+                int cheat_saving = distance[cheat_end_point]
+                  - distance[point{x, y}] - abs(dx) - abs(dy);
+                if (cheat_saving > 0)
+                  ++cheats[cheat_saving];
+              }
+            }
+  ans = 0;
   for (auto const &p : cheats)
     if (p.first >= 100)
       ans += p.second;
