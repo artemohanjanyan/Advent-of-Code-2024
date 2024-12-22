@@ -163,31 +163,29 @@ vector<string> extract_sections(string const &sequence)
   return sections;
 }
 
-struct solver
+string get_best_arrow_sequence(vector<point> const &points_to_press)
 {
-  map<pair<int, string>, uint64_t> dp;
-
-  uint64_t get(int n, string const &section)
+  vector<string> sequences = arrow_sequences(points_to_press, {2, 0}, {0, 0});
+  string best_sequence = "";
+  size_t best_third_sequence_size = numeric_limits<size_t>::max();
+  for (string const &sequence : sequences)
   {
-    if (n == 0)
-      return section.size();
-    if (dp.contains({n, section}))
-      return dp[{n, section}];
-    vector<point> points_to_press = decode_arrowpad(section);
-    vector<string> sequences = arrow_sequences(points_to_press, {2, 0}, {0, 0});
-    uint64_t best = numeric_limits<uint64_t>::max();
-    for (string const &sequence : sequences)
+    vector<point> second_points_to_press = decode_arrowpad(sequence);
+    vector<string> second_sequences = arrow_sequences(second_points_to_press, {2, 0}, {0, 0});
+    for (string const &second_sequence : second_sequences)
     {
-      uint64_t ans = 0;
-      vector<string> sections = extract_sections(sequence);
-      for (string const &section_2 : sections)
-        ans += get(n - 1, section_2);
-      best = min(ans, best);
+      vector<point> third_points_to_press = decode_arrowpad(second_sequence);
+      vector<string> third_sequences = arrow_sequences(third_points_to_press, {2, 0}, {0, 0});
+      for (string const &third_sequence : third_sequences)
+        if (third_sequence.size() < best_third_sequence_size)
+        {
+          best_sequence = sequence;
+          best_third_sequence_size = third_sequence.size();
+        }
     }
-    dp[{n, section}] = best;
-    return best;
   }
-};
+  return best_sequence;
+}
 
 int main()
 {
@@ -195,25 +193,53 @@ int main()
   for (string str; cin >> str; )
     codes.push_back(str);
 
-  solver s;
+  map<string, string> next_buttons_to_press;
 
-  auto solve = [&codes, &s](int const arrowpad_n)
+  auto solve = [&codes, &next_buttons_to_press](int const arrowpad_n)
   {
     uint64_t ans = 0;
     for (string const &code : codes)
     {
       vector<point> points_to_press = decode_numpad(code);
-      vector<string> sequences = arrow_sequences(points_to_press, {2, 3}, {0, 3});
-      uint64_t best = numeric_limits<uint64_t>::max();
-      for (string const &sequence : sequences)
+      vector<string> paths = arrow_sequences(points_to_press, {2, 3}, {0, 3});
+      uint64_t ans_length = numeric_limits<uint64_t>::max();
+      for (auto buttons_to_press : paths)
       {
-        vector<string> sections = extract_sections(sequence);
-        uint64_t current = numeric_limits<uint64_t>::max();
+        vector<string> sections = extract_sections(buttons_to_press);
+        map<string, uint64_t> section_map;
         for (string const &section : sections)
-          current += s.get(arrowpad_n, section);
-        best = min(best, current);
+          ++section_map[section];
+
+        for (int i = 0; i < arrowpad_n; ++i)
+        {
+          map<string, uint64_t> next_section_map;
+          for (auto const &[section, section_n] : section_map)
+          {
+            if (!next_buttons_to_press.contains(section))
+            {
+              points_to_press = decode_arrowpad(section);
+              next_buttons_to_press[section] = get_best_arrow_sequence(points_to_press);
+            }
+            buttons_to_press = next_buttons_to_press[section];
+            sections = extract_sections(buttons_to_press);
+            for (string const &next_section : sections)
+              next_section_map[next_section] += section_n;
+          }
+          section_map.swap(next_section_map);
+        }
+
+        uint64_t sequence_length = 0;
+        for (auto const &[section, section_n] : section_map)
+          sequence_length += section.size() * section_n;
+
+        ans_length = min(ans_length, sequence_length);
+
+        // cout << code << endl;
+        // for (auto const &[section, section_n] : section_map)
+        //   cout << section << " " << section_n << endl;
+        // cout << sequence_length << "\n\n";
       }
-      ans += numeric_part(code) * (best + 1);
+      ans += numeric_part(code) * ans_length;
     }
     return ans;
   };
