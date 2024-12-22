@@ -208,12 +208,12 @@ int main()
       for (string const &sequence : sequences)
       {
         vector<string> sections = extract_sections(sequence);
-        uint64_t current = numeric_limits<uint64_t>::max();
+        uint64_t current = 0;
         for (string const &section : sections)
           current += s.get(arrowpad_n, section);
         best = min(best, current);
       }
-      ans += numeric_part(code) * (best + 1);
+      ans += numeric_part(code) * best;
     }
     return ans;
   };
